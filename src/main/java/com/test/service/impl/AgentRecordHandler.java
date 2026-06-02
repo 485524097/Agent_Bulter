@@ -5,6 +5,8 @@ import com.test.dto.AgentChatResponse;
 import com.test.dto.AgentExpenseItem;
 import com.test.dto.AgentPlan;
 import com.test.dto.BudgetWarningResult;
+import com.test.mq.event.ExpenseRecordCreatedEvent;
+import com.test.mq.producer.ExpenseRecordEventProducer;
 import com.test.service.BudgetWarningService;
 import com.test.service.ExpenseRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,6 +14,7 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -25,6 +28,9 @@ public class AgentRecordHandler {
 
     @Autowired
     private ExpenseRecordService expenseRecordService;
+
+    @Autowired
+    private ExpenseRecordEventProducer expenseRecordEventProducer;
 
     public AgentChatResponse handle(Long userId,
                                     String sessionId,
@@ -81,6 +87,20 @@ public class AgentRecordHandler {
                     sessionId
             );
 
+
+            ExpenseRecordCreatedEvent event = new ExpenseRecordCreatedEvent();
+            event.setRecordId(recordId);
+            event.setUserId(userId);
+            event.setSessionId(sessionId);
+            event.setRecordType(recordType);
+            event.setCategory(category);
+            event.setAmount(item.getAmount());
+            event.setDescription(description);
+            event.setSourceText(message);
+            event.setEventTime(LocalDateTime.now());
+
+            expenseRecordEventProducer.sendRecordCreatedEvent(event);
+
             recordIds.add(recordId);
 
             AgentExpenseItem savedItem = new AgentExpenseItem();
@@ -123,23 +143,23 @@ public class AgentRecordHandler {
         String reply = buildReply(savedItems);
 
         // 6. 保存完所有记录后，再统一检查预算预警
-        List<BudgetWarningResult> warningResults = checkBudgetWarnings(userId, savedItems);
-
-        if (warningResults != null && !warningResults.isEmpty()) {
-            for (BudgetWarningResult warningResult : warningResults) {
-                reply = reply + warningResult.getMessage();
-
-                AgentAction warningAction = new AgentAction();
-                warningAction.setName("budgetWarning");
-                warningAction.setSuccess(true);
-                warningAction.setMessage("触发预算预警，分类："
-                        + warningResult.getCategory()
-                        + "，风险等级："
-                        + warningResult.getLevel());
-
-                actions.add(warningAction);
-            }
-        }
+//        List<BudgetWarningResult> warningResults = checkBudgetWarnings(userId, savedItems);
+//
+//        if (warningResults != null && !warningResults.isEmpty()) {
+//            for (BudgetWarningResult warningResult : warningResults) {
+//                reply = reply + warningResult.getMessage();
+//
+//                AgentAction warningAction = new AgentAction();
+//                warningAction.setName("budgetWarning");
+//                warningAction.setSuccess(true);
+//                warningAction.setMessage("触发预算预警，分类："
+//                        + warningResult.getCategory()
+//                        + "，风险等级："
+//                        + warningResult.getLevel());
+//
+//                actions.add(warningAction);
+//            }
+//        }
 
         // 7. 一定要设置 reply
         response.setReply(reply);
