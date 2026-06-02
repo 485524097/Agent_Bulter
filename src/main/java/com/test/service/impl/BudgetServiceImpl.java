@@ -8,6 +8,7 @@ import com.test.service.BudgetService;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Service
 public class BudgetServiceImpl extends ServiceImpl<BudgetMapper, Budget> implements BudgetService {
@@ -89,5 +90,20 @@ public class BudgetServiceImpl extends ServiceImpl<BudgetMapper, Budget> impleme
                 .eq("deleted", 0);
 
         return this.getOne(queryWrapper);
+    }
+    @Override
+    public List<Budget> listEnabledBudgets(String budgetMonth) {
+
+        if (budgetMonth == null || budgetMonth.trim().isEmpty()) {
+            throw new RuntimeException("预算月份不能为空");
+        }
+
+        QueryWrapper<Budget> queryWrapper = new QueryWrapper<>();
+
+        queryWrapper.eq("budget_month", budgetMonth)
+                .eq("enabled", 1)
+                .eq("deleted", 0);
+
+        return this.list(queryWrapper);
     }
 }
