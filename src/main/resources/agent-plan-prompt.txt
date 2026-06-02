@@ -37,6 +37,11 @@
 * ANALYZE_EXPENSE：用户想分析消费、收入或收支情况
 * SET_BUDGET：用户想设置预算
 * BUDGET_RISK：用户想查询预算、判断预算是否超支、预算是否够用、剩余预算是多少
+* LIST_RECORDS：用户想查看账单明细、账单列表、消费明细、收支明细或记账记录
+* DELETE_RECORD：用户想删除指定账单或记录
+* UPDATE_RECORD：用户想修改指定账单或记录
+* UNDO_RECORD：用户想撤销、删除或取消最近一笔账单
+* KNOWLEDGE_ADVICE：用户想获得消费控制、预算管理、省钱、理财建议，或者询问某类消费太多该怎么办
 * CHAT：普通闲聊
 * UNKNOWN：无法判断意图
 
@@ -56,6 +61,8 @@
 * 金额必须使用阿拉伯数字，不要带单位。
 * 例如“18元”“十八块”“18块钱”都返回 18。
 * 如果是多笔记录，amount 填写第一笔记录的金额。
+* 如果是修改账单，例如“把账单15改成25元”，amount 填写新的金额 25。
+* 如果是删除、撤销、查询、建议类问题，amount 填写 null。
 
 4. category 表示类别。
 
@@ -93,21 +100,13 @@
 * 如果所有记录都缺少金额，则 valid 为 false。
 * 如果 intent 不是 RECORD_EXPENSE，则 expenses 填写 null。
 
-expenses 每一项格式：
-
-{
-"amount": 18,
-"category": "饮品",
-"recordType": "EXPENSE",
-"description": "奶茶"
-}
-
 7. valid 表示本次解析是否有效。
 
 * 如果用户表达清楚，填写 true。
 * 如果缺少关键信息，填写 false。
 * 记账类请求必须至少识别出一笔有效的金额记录，valid 才能为 true。
-* 查询、分析、预算查询、预算风险、闲聊类请求，只要意图明确，valid 就可以为 true。
+* 查询、分析、预算查询、账单管理、知识建议、闲聊类请求，只要意图明确，valid 就可以为 true。
+* 删除、修改指定账单时，如果没有账单 ID，valid 填写 false。
 
 8. reason 表示原因说明。
 
@@ -166,6 +165,11 @@ expenses 每一项格式：
 看看我最近消费结构
 分析一下我的收入和支出
 看看本月收支情况
+本月餐饮占比多少
+饮品消费占比多少
+
+注意：
+如果用户是在问“怎么控制”“怎么省钱”“怎么办”“有什么建议”，不要判断为 ANALYZE_EXPENSE，而应判断为 KNOWLEDGE_ADVICE。
 
 6. 如果用户想设置预算，判断为 SET_BUDGET。
 
@@ -205,7 +209,77 @@ expenses 每一项格式：
 饮品预算够不够
 交通预算查询
 
-8. 如果用户只是普通聊天，判断为 CHAT。
+8. 如果用户想查看账单明细、账单列表、消费明细、收支明细或记账记录，判断为 LIST_RECORDS。
+
+例如：
+查看本月账单
+查一下账单明细
+查看消费明细
+今天账单
+本月账单列表
+查看记账记录
+查一下餐饮账单
+查看本月收入记录
+
+9. 如果用户想删除指定账单，判断为 DELETE_RECORD。
+
+例如：
+删除账单17
+删掉记录15
+帮我删除账单20
+删除这条账单18
+
+如果用户没有提供具体账单 ID，valid 为 false。
+
+10. 如果用户想修改指定账单，判断为 UPDATE_RECORD。
+
+例如：
+把账单15改成25元
+修改账单18为30元
+把记录20改为餐饮
+把账单21描述改为奶茶
+把账单16改成支出50元
+
+如果用户没有提供具体账单 ID，valid 为 false。
+
+11. 如果用户想撤销最近一笔账单，判断为 UNDO_RECORD。
+
+例如：
+撤销上一笔
+撤销最近一笔
+删除上一笔
+删除最近一笔
+取消上一笔
+刚刚那笔记错了
+上一笔记错了
+最近一笔记错了
+
+12. 如果用户是在询问如何控制消费、如何省钱、如何减少某类支出、某类消费太多怎么办、预算管理建议或理财建议，判断为 KNOWLEDGE_ADVICE。
+
+例如：
+我奶茶喝太多了，怎么控制饮品消费？
+我老是买喝的，怎么省一点？
+外卖花太多了怎么办？
+有什么省钱建议？
+怎么减少冲动消费？
+怎么控制购物消费？
+我这个月花太多了，有什么办法？
+怎么改善我的消费习惯？
+预算总是超支怎么办？
+怎么做个人预算管理？
+如何控制餐饮支出？
+饮品消费太高了怎么办？
+我总是买咖啡奶茶，怎么少花点？
+怎么降低非必要支出？
+
+注意：
+
+* 只要用户的核心诉求是“建议、方法、怎么办、如何改善”，就优先判断为 KNOWLEDGE_ADVICE。
+* 即使句子里包含“消费”“预算”“支出”，只要是在问建议，不要判断为 ANALYZE_EXPENSE。
+* KNOWLEDGE_ADVICE 不需要提取 amount。
+* 如果能判断具体消费类别，可以填写 category，例如饮品、餐饮、购物；无法判断则填 null。
+
+13. 如果用户只是普通聊天，判断为 CHAT。
 
 例如：
 你好
@@ -214,13 +288,13 @@ expenses 每一项格式：
 今天天气不错
 今天好烦
 
-9. 如果用户表达不完整，判断为 UNKNOWN。
+14. 如果用户表达不完整，判断为 UNKNOWN。
 
 例如：
 今天花了
 帮我记一下
-预算
 查一下
+改一下账单
 
 示例 1：
 
@@ -246,75 +320,6 @@ expenses 每一项格式：
 }
 
 示例 2：
-
-用户输入：午饭28元
-
-返回：
-{
-"intent": "RECORD_EXPENSE",
-"recordType": "EXPENSE",
-"amount": 28,
-"category": "餐饮",
-"description": "午饭",
-"expenses": [
-{
-"amount": 28,
-"category": "餐饮",
-"recordType": "EXPENSE",
-"description": "午饭"
-}
-],
-"valid": true,
-"reason": ""
-}
-
-示例 3：
-
-用户输入：打车花了22
-
-返回：
-{
-"intent": "RECORD_EXPENSE",
-"recordType": "EXPENSE",
-"amount": 22,
-"category": "交通",
-"description": "打车",
-"expenses": [
-{
-"amount": 22,
-"category": "交通",
-"recordType": "EXPENSE",
-"description": "打车"
-}
-],
-"valid": true,
-"reason": ""
-}
-
-示例 4：
-
-用户输入：今天工资到账5000
-
-返回：
-{
-"intent": "RECORD_EXPENSE",
-"recordType": "INCOME",
-"amount": 5000,
-"category": "工资",
-"description": "工资到账",
-"expenses": [
-{
-"amount": 5000,
-"category": "工资",
-"recordType": "INCOME",
-"description": "工资到账"
-}
-],
-"valid": true,
-"reason": ""
-}
-
-示例 5：
 
 用户输入：今天奶茶18，午饭28，打车22
 
@@ -349,9 +354,9 @@ expenses 每一项格式：
 "reason": ""
 }
 
-示例 6：
+示例 3：
 
-用户输入：今天工资5000，奶茶18，打车22
+用户输入：今天工资到账5000
 
 返回：
 {
@@ -359,32 +364,20 @@ expenses 每一项格式：
 "recordType": "INCOME",
 "amount": 5000,
 "category": "工资",
-"description": "工资",
+"description": "工资到账",
 "expenses": [
 {
 "amount": 5000,
 "category": "工资",
 "recordType": "INCOME",
-"description": "工资"
-},
-{
-"amount": 18,
-"category": "饮品",
-"recordType": "EXPENSE",
-"description": "奶茶"
-},
-{
-"amount": 22,
-"category": "交通",
-"recordType": "EXPENSE",
-"description": "打车"
+"description": "工资到账"
 }
 ],
 "valid": true,
 "reason": ""
 }
 
-示例 7：
+示例 4：
 
 用户输入：我这个月花了多少钱
 
@@ -400,23 +393,7 @@ expenses 每一项格式：
 "reason": ""
 }
 
-示例 8：
-
-用户输入：我这个月收入多少
-
-返回：
-{
-"intent": "QUERY_EXPENSE",
-"recordType": null,
-"amount": null,
-"category": null,
-"description": null,
-"expenses": null,
-"valid": true,
-"reason": ""
-}
-
-示例 9：
+示例 5：
 
 用户输入：分析一下我这个月的消费情况
 
@@ -432,7 +409,7 @@ expenses 每一项格式：
 "reason": ""
 }
 
-示例 10：
+示例 6：
 
 用户输入：帮我把本月预算设置为1800
 
@@ -448,7 +425,7 @@ expenses 每一项格式：
 "reason": ""
 }
 
-示例 11：
+示例 7：
 
 用户输入：设置餐饮预算800
 
@@ -464,7 +441,7 @@ expenses 每一项格式：
 "reason": ""
 }
 
-示例 12：
+示例 8：
 
 用户输入：预算查询
 
@@ -480,7 +457,7 @@ expenses 每一项格式：
 "reason": ""
 }
 
-示例 13：
+示例 9：
 
 用户输入：餐饮预算还剩多少
 
@@ -496,13 +473,13 @@ expenses 每一项格式：
 "reason": ""
 }
 
-示例 14：
+示例 10：
 
-用户输入：我这个月会不会超预算
+用户输入：查看本月账单明细
 
 返回：
 {
-"intent": "BUDGET_RISK",
+"intent": "LIST_RECORDS",
 "recordType": null,
 "amount": null,
 "category": null,
@@ -512,7 +489,119 @@ expenses 每一项格式：
 "reason": ""
 }
 
+示例 11：
+
+用户输入：删除账单17
+
+返回：
+{
+"intent": "DELETE_RECORD",
+"recordType": null,
+"amount": null,
+"category": null,
+"description": null,
+"expenses": null,
+"valid": true,
+"reason": ""
+}
+
+示例 12：
+
+用户输入：把账单15改成25元
+
+返回：
+{
+"intent": "UPDATE_RECORD",
+"recordType": null,
+"amount": 25,
+"category": null,
+"description": null,
+"expenses": null,
+"valid": true,
+"reason": ""
+}
+
+示例 13：
+
+用户输入：撤销上一笔
+
+返回：
+{
+"intent": "UNDO_RECORD",
+"recordType": null,
+"amount": null,
+"category": null,
+"description": null,
+"expenses": null,
+"valid": true,
+"reason": ""
+}
+
+示例 14：
+
+用户输入：我奶茶喝太多了，怎么控制饮品消费？
+
+返回：
+{
+"intent": "KNOWLEDGE_ADVICE",
+"recordType": null,
+"amount": null,
+"category": "饮品",
+"description": null,
+"expenses": null,
+"valid": true,
+"reason": ""
+}
+
 示例 15：
+
+用户输入：我老是买喝的，怎么省一点？
+
+返回：
+{
+"intent": "KNOWLEDGE_ADVICE",
+"recordType": null,
+"amount": null,
+"category": "饮品",
+"description": null,
+"expenses": null,
+"valid": true,
+"reason": ""
+}
+
+示例 16：
+
+用户输入：外卖花太多了怎么办？
+
+返回：
+{
+"intent": "KNOWLEDGE_ADVICE",
+"recordType": null,
+"amount": null,
+"category": "餐饮",
+"description": null,
+"expenses": null,
+"valid": true,
+"reason": ""
+}
+
+示例 17：
+
+用户输入：有什么省钱建议？
+
+返回：
+{
+"intent": "KNOWLEDGE_ADVICE",
+"recordType": null,
+"amount": null,
+"category": null,
+"description": null,
+"expenses": null,
+"valid": true,
+"reason": ""
+}
+
+示例 18：
 
 用户输入：你好
 
@@ -528,7 +617,7 @@ expenses 每一项格式：
 "reason": ""
 }
 
-示例 16：
+示例 19：
 
 用户输入：今天花了
 

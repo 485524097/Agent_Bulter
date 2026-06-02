@@ -50,6 +50,8 @@ public class AgentServiceImpl implements AgentService {
     @Autowired
     private AgentRecordManageHandler agentRecordManageHandler;
 
+    @Autowired
+    private AgentKnowledgeHandler agentKnowledgeHandler;
 
     @Override
     public AgentChatResponse chat(Long userId, String sessionId, String message){
@@ -112,6 +114,10 @@ public class AgentServiceImpl implements AgentService {
 
             case ANALYZE_EXPENSE:
                 response = agentStatisticsHandler.handleAnalyze(userId, message, actions);
+                break;
+
+            case KNOWLEDGE_ADVICE:
+                response = agentKnowledgeHandler.handle(userId, sessionId, message, actions);
                 break;
 
             case SET_BUDGET:

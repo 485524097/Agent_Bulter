@@ -23,6 +23,10 @@ public enum IntentType {
     UPDATE_RECORD,
 
     /**
+     * RAG知识
+     */
+    KNOWLEDGE_ADVICE,
+    /**
      * 撤销最近一笔账单
      */
     UNDO_RECORD,

@@ -45,16 +45,22 @@ public class AgentIntentServiceImpl implements AgentIntentService {
         if (isBudgetQueryMessage(message) || isBudgetRiskMessage(message)) {
             return IntentType.BUDGET_RISK;
         }
+        // 3. 知识库建议 / RAG 建议类
+        if (isKnowledgeAdviceMessage(message)) {
+            return IntentType.KNOWLEDGE_ADVICE;
+        }
 
-        // 3. 查询类
+        // 4. 查询类
         if (isQueryMessage(message)) {
             return IntentType.QUERY_EXPENSE;
         }
 
-        // 4. 分析类
+        // 5. 分析类
         if (isAnalyzeMessage(message)) {
             return IntentType.ANALYZE_EXPENSE;
         }
+
+
 
         // 5. AI 解析成功时，参考 AI intent
         if (plan != null && Boolean.TRUE.equals(plan.getValid())) {
@@ -79,6 +85,9 @@ public class AgentIntentServiceImpl implements AgentIntentService {
             }
             if ("ANALYZE_EXPENSE".equals(intent)) {
                 return IntentType.ANALYZE_EXPENSE;
+            }
+            if ("KNOWLEDGE_ADVICE".equals(intent)) {
+                return IntentType.KNOWLEDGE_ADVICE;
             }
             if ("SET_BUDGET".equals(intent)) {
                 return IntentType.SET_BUDGET;
@@ -177,5 +186,44 @@ public class AgentIntentServiceImpl implements AgentIntentService {
                 || message.contains("刚刚那笔记错了")
                 || message.contains("上一笔记错了")
                 || message.contains("最近一笔记错了");
+    }
+    private boolean isKnowledgeAdviceMessage(String message) {
+        if (message == null || message.trim().isEmpty()) {
+            return false;
+        }
+
+        return message.contains("怎么控制")
+                || message.contains("如何控制")
+                || message.contains("控制一下")
+                || message.contains("控制消费")
+
+                || message.contains("怎么省钱")
+                || message.contains("如何省钱")
+                || message.contains("怎么省一点")
+                || message.contains("省一点")
+                || message.contains("省点钱")
+                || message.contains("少花点")
+                || message.contains("少花钱")
+
+                || message.contains("怎么减少")
+                || message.contains("如何减少")
+                || message.contains("减少消费")
+                || message.contains("降低支出")
+
+                || message.contains("消费建议")
+                || message.contains("理财建议")
+                || message.contains("预算建议")
+                || message.contains("有什么建议")
+                || message.contains("有什么办法")
+                || message.contains("怎么办")
+
+                || message.contains("太多了")
+                || message.contains("花太多")
+                || message.contains("买太多")
+
+                || message.contains("买喝的")
+                || message.contains("喝的")
+                || message.contains("奶茶太多")
+                || message.contains("饮品太多");
     }
 }
