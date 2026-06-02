@@ -1,0 +1,55 @@
+server:
+  port: 8181
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+spring:
+  application:
+    name: Butler
+  datasource:
+    url: jdbc:mysql://localhost:3306/bulter_agent?useUnicode=true&characterEncoding=utf-8&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 3000ms
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+langchain4j:
+  community:
+    dashscope:
+      chat-model:
+        api-key: ${AI_API_KEY}
+        model-name: qwen-long
+      embedding-model:
+        api-key: ${AI_API_KEY}
+        model-name: text-embedding-v4
+      streaming-chat-model:
+        api-key: ${AI_API_KEY}
+        model-name: qwen-long
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+springdoc:
+  group-configs:
+    - group: 默认接口
+      paths-to-match: /**
+      packages-to-scan: com.test.controller
