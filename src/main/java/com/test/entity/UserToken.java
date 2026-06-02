@@ -47,4 +47,35 @@ public class UserToken {
 
     @TableLogic
     private Integer deleted;
+
+    @Data
+    @TableName("agent_api_log")
+    public static class AgentApiLog {
+
+        @TableId(type = IdType.AUTO)
+        private Long id;
+
+        private Long userId;
+
+        private String sessionId;
+
+        private String apiName;
+
+        private String requestUri;
+
+        private String requestMethod;
+
+        private String requestContent;
+
+        /**
+         * 1 成功，0 失败
+         */
+        private Integer success;
+
+        private Long costMs;
+
+        private String errorMsg;
+
+        private LocalDateTime createdTime;
+    }
 }
