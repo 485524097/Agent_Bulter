@@ -4,6 +4,8 @@ import com.test.dto.BudgetWarningResult;
 import com.test.mq.RabbitMqConstants;
 import com.test.mq.event.ExpenseRecordCreatedEvent;
 import com.test.service.BudgetWarningService;
+import com.test.service.UserNotificationService;
+import com.test.websocket.NotificationWebSocketHandler;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -15,6 +17,12 @@ public class ExpenseRecordEventConsumer {
 
     @Autowired
     private BudgetWarningService budgetWarningService;
+
+    @Autowired
+    private UserNotificationService userNotificationService;
+
+    @Autowired
+    private NotificationWebSocketHandler notificationWebSocketHandler;
 
     @RabbitListener(
             queues = RabbitMqConstants.EXPENSE_RECORD_CREATED_QUEUE,
@@ -55,6 +63,27 @@ public class ExpenseRecordEventConsumer {
                     + ", category=" + warningResult.getCategory()
                     + ", level=" + warningResult.getLevel()
                     + ", message=" + warningResult.getMessage());
+            String title = "预算预警";
+            String content = warningResult.getMessage();
+
+            Long notificationId = userNotificationService.createNotification(
+                    event.getUserId(),
+                    title,
+                    content,
+                    "BUDGET_WARNING",
+                    event.getRecordId()
+            );
+
+            String pushMessage = "{"
+                    + "\"type\":\"BUDGET_WARNING\","
+                    + "\"notificationId\":" + notificationId + ","
+                    + "\"recordId\":" + event.getRecordId() + ","
+                    + "\"category\":\"" + warningResult.getCategory() + "\","
+                    + "\"level\":\"" + warningResult.getLevel() + "\","
+                    + "\"content\":\"" + content.replace("\"", "\\\"") + "\""
+                    + "}";
+
+            notificationWebSocketHandler.sendToUser(event.getUserId(), pushMessage);
         }
     }
 }

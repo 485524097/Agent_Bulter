@@ -21,7 +21,7 @@ public class AgentChatReplyService {
         AgentChatResponse response = new AgentChatResponse();
 
         try {
-            String reply = aiService.chat(sessionId, message);
+            String reply = aiService.chat("chat_" + sessionId, message);
 
             response.setReply(reply);
             response.setActions(actions);

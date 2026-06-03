@@ -66,7 +66,7 @@ public class AgentKnowledgeHandler {
                 + "\n【用户问题】\n"
                 + message;
 
-        String reply = aiService.chat(sessionId, prompt);
+        String reply = aiService.chat("chat_" + sessionId, prompt);
 
         AgentAction action = new AgentAction();
         action.setName("retrieveKnowledge");

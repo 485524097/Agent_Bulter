@@ -64,7 +64,7 @@ public class AgentStreamService {
             );
 
             // 4. 调用流式 AI
-            aiService.streamChat(finalSessionId, message)
+            aiService.streamChat("chat_" + finalSessionId, message)
                     .onPartialResponse(partialResponse -> {
                         try {
                             fullReply.append(partialResponse);

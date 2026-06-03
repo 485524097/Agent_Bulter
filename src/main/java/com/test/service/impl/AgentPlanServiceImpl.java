@@ -19,7 +19,10 @@ public class AgentPlanServiceImpl implements AgentPlanService {
     @Override
     public AgentPlan parsePlan(String sessionId, String message) {
         try {
-            String json = this.aiService.plan(sessionId, message);
+            String planMemoryId = "plan_" + java.util.UUID.randomUUID().toString().replace("-", "");
+
+            String json = aiService.plan(planMemoryId, message);
+
             System.out.println("AI Agent 计划结果：" + json);
             json = cleanJson(json);
             return this.objectMapper.readValue(json, AgentPlan.class);

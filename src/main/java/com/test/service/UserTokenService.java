@@ -12,4 +12,6 @@ public interface UserTokenService extends IService<UserToken> {
                    LocalDateTime expireTime);
 
     void invalidToken(String token);
+
+    Long getUserIdByToken(String token);
 }
